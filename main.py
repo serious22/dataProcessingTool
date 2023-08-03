@@ -130,13 +130,10 @@ def filter_columns():
     update_columns(file_path)
 
 def check_missing_values():
-    def new(data_frame):
-        if main_df.empty:
-            messagebox.showwarning("File not found","Please select an Excel file.")
+    def get_missing_values(data_frame):
+        if data_frame.empty:
+            messagebox.showwarning("File not found", "Please select an Excel file.")
             return
-        
-       
-
 
         missing_values_count = data_frame.isnull().sum()
         columns_with_missing_values = missing_values_count[missing_values_count > 0].index.tolist()
@@ -144,19 +141,29 @@ def check_missing_values():
         missing_values_tree.delete(*missing_values_tree.get_children())
         for col, total_missing in zip(columns_with_missing_values, total_missing_values_per_column):
             missing_values_tree.insert("", "end", values=(col, total_missing))
-        
+
+    def show_original_data():
+        get_missing_values(main_df)
+
+    def show_filtered_data():
+        get_missing_values(final_df)
+
     check_missing_values_window = tk.Toplevel()
     check_missing_values_window.geometry("500x400")
     check_missing_values_window.title('Missing Values')
+
     table_frame = ttk.Frame(check_missing_values_window)
     table_frame.pack(padx=10, pady=10)
+
     missing_values_tree = ttk.Treeview(table_frame, columns=("Column Name", "Total Missing Values"), show="headings", height=5)
     missing_values_tree.heading("Column Name", text="Column Name")
     missing_values_tree.heading("Total Missing Values", text="Total Missing Values")
     missing_values_tree.pack()
-    missing_main = tk.Button(check_missing_values_window,text = "Original Data",command=new(main_df))
+
+    missing_main = tk.Button(check_missing_values_window, text="Original Data", command=show_original_data)
     missing_main.pack()
-    missing_filter = tk.Button(check_missing_values_window,text = "Filtered  Data",command=new(final_df))
+
+    missing_filter = tk.Button(check_missing_values_window, text="Filtered Data", command=show_filtered_data)
     missing_filter.pack()
 def export_file():
     def open_export_file():
