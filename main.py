@@ -12,6 +12,7 @@ sheet_name_var = ""
 main_df = pd.DataFrame()
 final_df = pd.DataFrame()
 fill_value = 0
+column_name = ""
 
 def browse_file():
     def get_file():
@@ -139,7 +140,7 @@ def filter_columns():
 
 def check_missing_values():
 
-    column_name = ""
+    
     def get_missing_values(data_frame):
         if data_frame.empty:
             messagebox.showwarning("File not found", "Please Filter the data first")
@@ -160,7 +161,10 @@ def check_missing_values():
 
     
     def fill_missing_values():
-        fill_missing_value_functions(final_df,column_name)
+        if column_name == "":
+            messagebox.showerror("Column not selected","Please select a column to fill")
+        else:
+            fill_missing_value_functions(final_df,column_name)
 
     check_missing_values_window = tk.Toplevel()
     check_missing_values_window.geometry("500x400")
@@ -183,20 +187,36 @@ def check_missing_values():
     get_missing_values(final_df)
 
 
-def fill_missing_value_functions(data_frame,column_name):
+def fill_missing_value_functions(data_frame, column_name):
+    fill_value = tk.IntVar()
+
     def fill_with_value():
+        def confirm_value():
+            nonlocal fill_value
+            fill_value_str = fill_with_value_entry.get()
+            try:
+                fill_value.set(int(fill_value_str))
+                data_frame.loc[data_frame[column_name].isnull(), column_name] = fill_value.get()
+                fill_window.destroy()
+            except ValueError:
+                messagebox.showerror("Invalid Input", "Please provide a valid integer value.")
+        
         fill_window = tk.Toplevel()
         fill_with_value_label = tk.Label(fill_window, text="Provide the value")
         fill_with_value_label.pack()
         fill_with_value_entry = tk.Entry(fill_window)
         fill_with_value_entry.pack()
-        def confirm_value():
-            global fill_value
-            fill_value_str = fill_with_value_entry.get()
-            fill_value=int(fill_value_str)
-            fill_window.destroy()
         confirm_button = tk.Button(fill_window, text="Confirm", command=confirm_value)
         confirm_button.pack()
+
+    def fill_with_mean():
+        mean_value = data_frame[column_name].mean()
+        data_frame[column_name].fillna(mean_value, inplace=True)
+    def fill_with_mode():
+        mode_value = data_frame[column_name].mode()[0]
+        data_frame[column_name].fillna(mode_value, inplace=True)
+    def fill_with_previous():
+        data_frame[column_name].fillna(method='ffill', inplace=True)
 
     def drop_row():
         print("h")
@@ -206,8 +226,14 @@ def fill_missing_value_functions(data_frame,column_name):
     missing_value_functions_window.title("Handle Missing Values")
     drop_button = tk.Button(missing_value_functions_window, text="Drop Na", command=drop_row)
     drop_button.pack()
-    fill_with_value_button = tk.Button(missing_value_functions_window, text="Fill with value", command=fill_with_value)
+    fill_with_value_button = tk.Button(missing_value_functions_window, text="Fill with custom value", command=fill_with_value)
     fill_with_value_button.pack()
+    fill_with_mean_button = tk.Button(missing_value_functions_window, text="Fill with Mean Value", command=fill_with_mean)
+    fill_with_mean_button.pack()
+    fill_with_mode_button = tk.Button(missing_value_functions_window, text="Fill with Mode value", command=fill_with_mode)
+    fill_with_mode_button.pack()
+    fill_with_prev_button = tk.Button(missing_value_functions_window, text="Fill with Closest Value", command=fill_with_previous)
+    fill_with_prev_button.pack()
     confirm_button = tk.Button(missing_value_functions_window, text="Confirm", command=missing_value_functions_window.destroy)
     confirm_button.pack()
 
