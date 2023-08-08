@@ -11,6 +11,7 @@ file_path = ""
 sheet_name_var = ""
 main_df = pd.DataFrame()
 final_df = pd.DataFrame()
+fill_value = 0
 
 def browse_file():
     def get_file():
@@ -111,6 +112,10 @@ def filter_columns():
     def on_sheet_name_change(*args):
         process_selected_columns()
 
+    def select_all_columns():
+        available_columns.select_set(0, tk.END)
+        process_selected_columns()
+
     filter_columns_window = tk.Toplevel()
     filter_columns_window.geometry("500x400")
     filter_columns_window.title("Filter Columns")
@@ -118,6 +123,9 @@ def filter_columns():
     available_columns_label.pack()
     available_columns = tk.Listbox(filter_columns_window, selectmode=tk.MULTIPLE)
     available_columns.pack()
+    select_all_checkbox = tk.Checkbutton(filter_columns_window, text="Select All", command=select_all_columns)
+    select_all_checkbox.pack()
+
     sheet_name_svar.trace("w", on_sheet_name_change)
     
     process_columns_button = tk.Button(filter_columns_window,text="Process columns",command=process_selected_columns)
@@ -130,9 +138,11 @@ def filter_columns():
     update_columns(file_path)
 
 def check_missing_values():
+
+    column_name = ""
     def get_missing_values(data_frame):
         if data_frame.empty:
-            messagebox.showwarning("File not found", "Please select an Excel file.")
+            messagebox.showwarning("File not found", "Please Filter the data first")
             return
 
         missing_values_count = data_frame.isnull().sum()
@@ -142,11 +152,15 @@ def check_missing_values():
         for col, total_missing in zip(columns_with_missing_values, total_missing_values_per_column):
             missing_values_tree.insert("", "end", values=(col, total_missing))
 
-    def show_original_data():
-        get_missing_values(main_df)
+    
+    def on_select(event):
+        selected_item = missing_values_tree.selection()[0]
+        global column_name
+        column_name = missing_values_tree.item(selected_item, "values")[0]
 
-    def show_filtered_data():
-        get_missing_values(final_df)
+    
+    def fill_missing_values():
+        fill_missing_value_functions(final_df,column_name)
 
     check_missing_values_window = tk.Toplevel()
     check_missing_values_window.geometry("500x400")
@@ -160,11 +174,46 @@ def check_missing_values():
     missing_values_tree.heading("Total Missing Values", text="Total Missing Values")
     missing_values_tree.pack()
 
-    missing_main = tk.Button(check_missing_values_window, text="Original Data", command=show_original_data)
-    missing_main.pack()
 
-    missing_filter = tk.Button(check_missing_values_window, text="Filtered Data", command=show_filtered_data)
-    missing_filter.pack()
+
+    missing_values_tree.bind("<<TreeviewSelect>>", on_select)
+
+    fill_missing_values_button = tk.Button(check_missing_values_window,text="Fill Missing values", command=fill_missing_values)
+    fill_missing_values_button.pack()
+    get_missing_values(final_df)
+
+
+def fill_missing_value_functions(data_frame,column_name):
+    def fill_with_value():
+        fill_window = tk.Toplevel()
+        fill_with_value_label = tk.Label(fill_window, text="Provide the value")
+        fill_with_value_label.pack()
+        fill_with_value_entry = tk.Entry(fill_window)
+        fill_with_value_entry.pack()
+        def confirm_value():
+            global fill_value
+            fill_value_str = fill_with_value_entry.get()
+            fill_value=int(fill_value_str)
+            fill_window.destroy()
+        confirm_button = tk.Button(fill_window, text="Confirm", command=confirm_value)
+        confirm_button.pack()
+
+    def drop_row():
+        print("h")
+
+    missing_value_functions_window = tk.Toplevel()
+    missing_value_functions_window.geometry("500x300")
+    missing_value_functions_window.title("Handle Missing Values")
+    drop_button = tk.Button(missing_value_functions_window, text="Drop Na", command=drop_row)
+    drop_button.pack()
+    fill_with_value_button = tk.Button(missing_value_functions_window, text="Fill with value", command=fill_with_value)
+    fill_with_value_button.pack()
+    confirm_button = tk.Button(missing_value_functions_window, text="Confirm", command=missing_value_functions_window.destroy)
+    confirm_button.pack()
+
+
+
+
 def export_file():
     def open_export_file():
         os.startfile(export_path)
